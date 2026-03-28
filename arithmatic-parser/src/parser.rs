@@ -12,6 +12,13 @@ pub enum Operator {
 pub struct Constant {
     value: f64,
 }
+
+impl Constant {
+    pub fn value(&self) -> f64 {
+        self.value
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Expression {
     Operator {

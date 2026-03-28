@@ -1,3 +1,5 @@
+use colored::Colorize;
+
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Token {
     NUM(f64),
@@ -32,17 +34,16 @@ impl Lexer {
     pub fn skip_whitespace(&mut self) {
         while self.ch == ' ' || self.ch == '\t' || self.ch == '\n' || self.ch == '\r' {
             self.consume();
-            println!("Skipping");
         }
     }
 
     pub fn read_char(&mut self) {
         self.ch = self.input.chars().nth(self.position).unwrap_or('\0');
-        self.position += 1;
     }
 
     pub fn consume(&mut self) -> char {
         let ch = self.ch;
+        self.position += 1;
         self.read_char();
         ch
     }
@@ -50,10 +51,10 @@ impl Lexer {
     pub fn read_number(&mut self) -> Result<String, String> {
         let mut number = String::new();
         number.push(self.ch); // capture the first digit already in self.ch
-        self.read_char(); // advance WITHOUT consuming (just move forward)
+        self.consume(); // advance WITHOUT consuming (just move forward)
         while is_digit(self.ch) || self.ch == '.' {
             number.push(self.ch);
-            self.read_char();
+            self.consume();
         }
         Ok(number)
     }
@@ -94,5 +95,24 @@ impl Lexer {
             }
             _ => Err(format!("Character {} not recognised", ch)),
         }
+    }
+
+    pub fn tokenize(&mut self) -> Vec<Token> {
+        let mut result = Vec::new();
+        loop {
+            let token = self.next_token();
+            match token {
+                Ok(token) => {
+                    result.push(token);
+                    if token == Token::EOO {
+                        break;
+                    }
+                }
+                Err(e) => {
+                    println!("{}", format!("LEXER ERROR: {}", e).red().bold());
+                }
+            }
+        }
+        result
     }
 }
