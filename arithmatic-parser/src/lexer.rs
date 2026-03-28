@@ -30,34 +30,69 @@ impl Lexer {
     }
 
     pub fn skip_whitespace(&mut self) {
-        let ch = self.ch;
-        if ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' {
-            self.read_char();
+        while self.ch == ' ' || self.ch == '\t' || self.ch == '\n' || self.ch == '\r' {
+            self.consume();
+            println!("Skipping");
         }
     }
 
     pub fn read_char(&mut self) {
-        if self.position >= self.input.len() {
-            self.ch = '\0';
-        } else {
-            self.ch = self.input.chars().nth(self.position).unwrap();
-        }
+        self.ch = self.input.chars().nth(self.position).unwrap_or('\0');
         self.position += 1;
     }
 
-    pub fn next_token(&mut self) -> Token {
-        self.skip_whitespace();
+    pub fn consume(&mut self) -> char {
         let ch = self.ch;
         self.read_char();
+        ch
+    }
+
+    pub fn read_number(&mut self) -> Result<String, String> {
+        let mut number = String::new();
+        number.push(self.ch); // capture the first digit already in self.ch
+        self.read_char(); // advance WITHOUT consuming (just move forward)
+        while is_digit(self.ch) || self.ch == '.' {
+            number.push(self.ch);
+            self.read_char();
+        }
+        Ok(number)
+    }
+
+    pub fn next_token(&mut self) -> Result<Token, String> {
+        self.read_char();
+        self.skip_whitespace();
+        let ch = self.ch;
         match ch {
-            '+' => Token::PLUS,
-            '-' => Token::MINUS,
-            '*' => Token::MUL,
-            '/' => Token::DIV,
-            '(' => Token::LPAREN,
-            ')' => Token::RPAREN,
-            '\0' => Token::EOO,
-            _ => Token::NUM(ch.to_digit(10).unwrap() as f64),
+            '+' => {
+                self.consume();
+                Ok(Token::PLUS)
+            }
+            '-' => {
+                self.consume();
+                Ok(Token::MINUS)
+            }
+            '*' => {
+                self.consume();
+                Ok(Token::MUL)
+            }
+            '/' => {
+                self.consume();
+                Ok(Token::DIV)
+            }
+            '(' => {
+                self.consume();
+                Ok(Token::LPAREN)
+            }
+            ')' => {
+                self.consume();
+                Ok(Token::RPAREN)
+            }
+            '\0' => Ok(Token::EOO),
+            _ if is_digit(ch) => {
+                let str = self.read_number()?;
+                Ok(Token::NUM(str.trim().parse::<f64>().unwrap()))
+            }
+            _ => Err(format!("Character {} not recognised", ch)),
         }
     }
 }
