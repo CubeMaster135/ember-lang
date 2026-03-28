@@ -33,7 +33,7 @@ impl Parser {
     pub fn parse_variable_declaration(&mut self) -> Result<Variable, String> {
         match self.current() {
             Some(Token::LET) => {}
-            _ => return Err("Expected 'let'".into()),
+            _ => return Err("Missing Variable Declaration".into()),
         }
         let name = match self.advance().unwrap() {
             Token::IDENT(n) => n,
@@ -48,11 +48,13 @@ impl Parser {
         };
         let value: String = value.into_iter().collect();
         self.advance();
-        self.expect(Token::SEMICOLON);
-        Ok(Variable {
-            name: Name { name: name },
-            value: Value { value },
-        })
+        match self.expect(Token::SEMICOLON) {
+            Ok(()) => Ok(Variable {
+                name: Name { name: name },
+                value: Value { value },
+            }),
+            Err(e) => return Err("Missing semicolon".into()),
+        }
     }
 
     fn expect(&mut self, expected: Token) -> Result<(), String> {
