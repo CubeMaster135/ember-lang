@@ -1,4 +1,12 @@
 #[derive(PartialEq, Debug, Clone)]
+pub enum DataType {
+    INT,
+    FLOAT,
+    BOOL,
+    STRING,
+}
+
+#[derive(PartialEq, Debug, Clone)]
 pub enum Token {
     ILLEGAL,
     EOF,
@@ -7,6 +15,7 @@ pub enum Token {
     ASSIGN,
     PLUS(char),
     COMMA(char),
+    COLON,
     SEMICOLON,
     LPAREN(char),
     RPAREN(char),
@@ -28,6 +37,7 @@ pub enum Token {
     GT(char),
     QMARK,
     SMARK,
+    DATATYPE(DataType),
 }
 
 pub fn get_keyword_token(ident: &Vec<char>) -> Result<Token, String> {
@@ -40,6 +50,10 @@ pub fn get_keyword_token(ident: &Vec<char>) -> Result<Token, String> {
         "if" => Ok(Token::IF),
         "else" => Ok(Token::ELSE),
         "return" => Ok(Token::RETURN),
+        "int" => Ok(Token::DATATYPE(DataType::INT)),
+        "float" => Ok(Token::DATATYPE(DataType::FLOAT)),
+        "bool" => Ok(Token::DATATYPE(DataType::BOOL)),
+        "string" => Ok(Token::DATATYPE(DataType::STRING)),
         _ => Err(String::from("Not a keyword")),
     }
 }

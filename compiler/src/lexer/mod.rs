@@ -71,6 +71,7 @@ impl Lexer {
             '*' => tok = token::Token::ASTERISK(self.ch),
             '<' => tok = token::Token::LT(self.ch),
             '>' => tok = token::Token::GT(self.ch),
+            ':' => tok = token::Token::COLON,
             ';' => tok = token::Token::SEMICOLON,
             '(' => tok = token::Token::LPAREN(self.ch),
             ')' => tok = token::Token::RPAREN(self.ch),

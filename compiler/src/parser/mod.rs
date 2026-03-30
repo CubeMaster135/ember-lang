@@ -1,4 +1,5 @@
 pub mod parser;
+use crate::lexer::token::DataType;
 
 #[derive(Clone, Debug)]
 enum Operator {
@@ -35,13 +36,11 @@ impl Expr {
 }
 
 #[derive(Clone, Debug)]
-struct Value {
-    value: String,
-}
-impl Value {
-    fn new(value: String) -> Self {
-        Self { value }
-    }
+enum Value {
+    STRING(String),
+    INT(i64),
+    FLOAT(f64),
+    BOOL(bool),
 }
 
 #[derive(Clone, Debug)]
@@ -58,15 +57,14 @@ impl Name {
 pub struct Variable {
     name: Name,
     value: Value,
+    data_type: DataType,
 }
 impl Variable {
-    fn new(name: Name, value: Value) -> Self {
-        Self { name, value }
-    }
-    fn get_value(&self) -> &String {
-        &self.value.value
-    }
-    fn set_value(&mut self, value: String) {
-        self.value.value = value;
+    fn new(name: Name, value: Value, data_type: DataType) -> Self {
+        Self {
+            name,
+            value,
+            data_type,
+        }
     }
 }
