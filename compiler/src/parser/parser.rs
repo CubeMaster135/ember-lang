@@ -51,8 +51,20 @@ impl Parser {
         };
         let name: String = name.iter().collect();
 
+        let mut data_type_before: Option<DataType> = None;
+
+        if self.peek().unwrap().clone() == Token::COLON {
+            self.advance();
+            data_type_before = match self.advance().unwrap().clone() {
+                Token::DATATYPE(dt) => Some(dt),
+                _ => return Err(format!("Unexpected Data Type, got: {:?}", self.current().unwrap().clone())),
+            };
+            println!("{:?}", data_type_before);
+        }
+
+
         // Gets the variable data type (optional, lexer guesses for you)
-        let (data_type, value) = match self.advance().unwrap().clone() {
+        let (mut data_type, value) = match self.advance().unwrap().clone() {
             Token::ASSIGN => {
                 let value = self.advance().unwrap().clone();
                 match value {
@@ -65,6 +77,12 @@ impl Parser {
             }
             _ => unreachable!()
         };
+
+        if data_type_before.is_some() {
+            if data_type_before.clone().unwrap() != data_type {
+                return Err(format!("Data type mismatch: expected {:?}, got {:?}", data_type_before.unwrap(), data_type));
+            }
+        }
 
         self.advance();
         match self.expect(vec![Token::SEMICOLON]) {
