@@ -7,6 +7,14 @@ pub enum DataType {
 }
 
 #[derive(PartialEq, Debug, Clone)]
+pub enum Data {
+    INT(i64),
+    FLOAT(f64),
+    BOOL(bool),
+    STRING(String),
+}
+
+#[derive(PartialEq, Debug, Clone)]
 pub enum Token {
     ILLEGAL,
     EOF,
@@ -38,6 +46,7 @@ pub enum Token {
     QMARK,
     SMARK,
     DATATYPE(DataType),
+    DATA(Data)
 }
 
 pub fn get_keyword_token(ident: &Vec<char>) -> Result<Token, String> {
@@ -45,8 +54,8 @@ pub fn get_keyword_token(ident: &Vec<char>) -> Result<Token, String> {
     match &identifier[..] {
         "fn" => Ok(Token::FUNCTION),
         "let" => Ok(Token::LET),
-        "true" => Ok(Token::TRUE),
-        "false" => Ok(Token::FALSE),
+        "true" => Ok(Token::DATA(Data::BOOL(true))),
+        "false" => Ok(Token::DATA(Data::BOOL(false))),
         "if" => Ok(Token::IF),
         "else" => Ok(Token::ELSE),
         "return" => Ok(Token::RETURN),

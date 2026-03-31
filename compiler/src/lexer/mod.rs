@@ -42,18 +42,18 @@ impl Lexer {
         }
     }
 
+    fn read_number(&mut self) -> Vec<char> {
+        let position = self.position;
+        while self.position < self.input.len() && (is_digit(self.ch) || self.ch == '.') {
+            self.read_char();
+        }
+        self.input[position..self.position].to_vec()
+    }
+
     pub fn next_token(&mut self) -> token::Token {
         let read_identifier = |l: &mut Lexer| -> Vec<char> {
             let position = l.position;
             while l.position < l.input.len() && is_letter(l.ch) {
-                l.read_char();
-            }
-            l.input[position..l.position].to_vec()
-        };
-
-        let read_number = |l: &mut Lexer| -> Vec<char> {
-            let position = l.position;
-            while l.position < l.input.len() && is_digit(l.ch) {
                 l.read_char();
             }
             l.input[position..l.position].to_vec()
@@ -80,7 +80,15 @@ impl Lexer {
             '}' => tok = token::Token::RBRACE(self.ch),
             '0' => tok = token::Token::EOF,
             '\'' => tok = token::Token::QMARK, // Single instance of single quote
-            '\"' => tok = token::Token::SMARK,
+            '\"' => tok = {
+                self.read_char();
+                let start = self.position;
+                while self.ch != '\"' {
+                    self.read_char();
+                }
+                let chars: Vec<char> = self.input[start..self.position].iter().copied().collect();
+                token::Token::DATA(token::Data::STRING(chars.into_iter().collect()))
+            },
             ' ' => {
                 self.skip_whitespace();
                 return self.next_token();
@@ -97,8 +105,14 @@ impl Lexer {
                         }
                     }
                 } else if is_digit(self.ch) {
-                    let ident: Vec<char> = read_number(self);
-                    return token::Token::INT(ident);
+                    let ident: Vec<char> = self.read_number();
+                    if ident.iter().collect::<String>().parse::<i64>().is_ok() {
+                        return token::Token::DATA(token::Data::INT(ident.iter().collect::<String>().parse::<i64>().unwrap()));
+                    } else if ident.iter().collect::<String>().parse::<f64>().is_ok() {
+                        return token::Token::DATA(token::Data::FLOAT(ident.iter().collect::<String>().parse::<f64>().unwrap()));
+                    } else {
+                        return token::Token::ILLEGAL;
+                    }
                 } else {
                     return token::Token::ILLEGAL;
                 }

@@ -12,7 +12,7 @@ fn main() -> Result<(), String> {
     loop {
         let token = l.next_token();
         lexer_output.push(token.clone());
-
+        println!("{:?}", token);
         if token == lexer::token::Token::EOF {
             break;
         }
