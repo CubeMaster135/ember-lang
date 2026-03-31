@@ -64,7 +64,7 @@ impl Parser {
 
 
         // Gets the variable data type (optional, lexer guesses for you)
-        let (mut data_type, value) = match self.advance().unwrap().clone() {
+        let (mut data_type, mut value) = match self.advance().unwrap().clone() {
             Token::ASSIGN => {
                 let value = self.advance().unwrap().clone();
                 match value {
@@ -80,7 +80,19 @@ impl Parser {
 
         if data_type_before.is_some() {
             if data_type_before.clone().unwrap() != data_type {
-                return Err(format!("Data type mismatch: expected {:?}, got {:?}", data_type_before.unwrap(), data_type));
+                if data_type_before.clone().unwrap() == DataType::FLOAT && data_type == DataType::INT {
+                    data_type = DataType::FLOAT;
+                    if let Value::INT(v) = value {
+                        value = Value::FLOAT(v as f64);
+                    }
+                } else if data_type_before.clone().unwrap() == DataType::INT && data_type == DataType::FLOAT {
+                    data_type = DataType::INT;
+                    if let Value::FLOAT(v) = value {
+                        value = Value::INT(v as i64);
+                    }
+                } else {
+                    return Err(format!("Data type mismatch: expected {:?}, got {:?}", data_type_before.unwrap(), data_type));
+                }
             }
         }
 
