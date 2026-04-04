@@ -4,8 +4,8 @@ use crate::lexer::token::DataType;
 
 #[derive(Clone, Debug)]
 enum Operator {
-    ADD,
-    SUB,
+    PLUS,
+    MINUS,
     MUL,
     DIV,
 }
@@ -82,11 +82,11 @@ impl VariableDeclaration {
 }
 
 #[derive(Clone, Debug)]
-pub struct VariableDefinition {
+pub struct VariableAssignment {
     name: Name,
     value: Value,
 }
-impl VariableDefinition {
+impl VariableAssignment {
     fn new(name: Name, value: Value) -> Self {
         Self { name, value }
     }

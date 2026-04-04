@@ -1,4 +1,4 @@
-use crate::lexer::token::{Data, DataType, Token};
+use crate::lexer::token::*;
 use crate::parser::parser::*;
 use crate::parser::*;
 
@@ -109,5 +109,99 @@ impl Parser {
             }),
             Err(e) => return Err("Incorect variable declaration: missing semicolon".into()),
         }
+    }
+
+    pub fn parse_variable_assignment(&mut self) -> Result<VariableAssignment, String> {
+        let name = match self.current() {
+            Some(Token::IDENT(n)) => n,
+            None => return Err("Missing Variable Name".into()),
+            _ => {
+                return Err(format!(
+                    "Unexpected Variable Name, got: {:?}",
+                    self.current().unwrap().clone()
+                ));
+            }
+        };
+        let name: String = name.iter().collect();
+
+        match self.advance() {
+            Some(Token::ASSIGN) => {}
+            _ => return Err("Missing Variable Declaration".into()),
+        }
+
+        let value = match self.advance() {
+            Some(v) => match v {
+                Token::DATA(v) => v.clone(),
+                _ => return Err("Unexpected Variable Value".into()),
+            },
+            None => {
+                return Err("Missing Variable Value".into());
+            }
+        };
+
+        self.advance().unwrap().clone();
+        match self.expect(vec![Token::SEMICOLON]) {
+            Ok(_) => Ok(VariableAssignment {
+                name: Name { name: name },
+                value: data_to_value(value.clone()),
+            }),
+            Err(e) => return Err("Incorect variable declaration: missing semicolon".into()),
+        }
+    }
+
+    pub fn parse_variable_modification(&mut self) -> Result<VariableModification, String> {
+        let name = match self.current() {
+            Some(Token::IDENT(n)) => n,
+            None => return Err("Missing Variable Name".into()),
+            _ => {
+                return Err(format!(
+                    "Unexpected Variable Name, got: {:?}",
+                    self.current().unwrap().clone()
+                ));
+            }
+        };
+        let name: String = name.iter().collect();
+
+        let op = match self.advance() {
+            Some(Token::PLUS) => Operator::PLUS,
+            Some(Token::MINUS) => Operator::MINUS,
+            Some(Token::ASTERISK) => Operator::MUL,
+            Some(Token::FSLASH) => Operator::DIV,
+            _ => return Err("Missing Variable Modification Operator".into()),
+        };
+
+        match self.advance() {
+            Some(Token::ASSIGN) => {}
+            _ => return Err("Missing Variable Declaration".into()),
+        }
+
+        let value = match self.advance() {
+            Some(v) => match v {
+                Token::DATA(v) => v.clone(),
+                _ => return Err("Unexpected Variable Value".into()),
+            },
+            None => {
+                return Err("Missing Variable Value".into());
+            }
+        };
+
+        self.advance().unwrap().clone();
+        match self.expect(vec![Token::SEMICOLON]) {
+            Ok(_) => Ok(VariableModification {
+                name: Name { name },
+                value: data_to_value(value),
+                op: op,
+            }),
+            Err(e) => return Err("Incorect variable declaration: missing semicolon".into()),
+        }
+    }
+}
+
+pub fn data_to_value(data: Data) -> Value {
+    match data {
+        Data::INT(i) => Value::INT(i),
+        Data::FLOAT(f) => Value::FLOAT(f),
+        Data::BOOL(b) => Value::BOOL(b),
+        Data::STRING(s) => Value::STRING(s),
     }
 }

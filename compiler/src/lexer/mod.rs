@@ -63,32 +63,35 @@ impl Lexer {
         self.skip_whitespace();
         match self.ch {
             '=' => tok = token::Token::ASSIGN,
-            '+' => tok = token::Token::PLUS(self.ch),
-            '-' => tok = token::Token::MINUS(self.ch),
-            '!' => tok = token::Token::BANG(self.ch),
-            '/' => tok = token::Token::FSLASH(self.ch),
-            '\\' => tok = token::Token::BSLASH(self.ch),
-            '*' => tok = token::Token::ASTERISK(self.ch),
-            '<' => tok = token::Token::LT(self.ch),
-            '>' => tok = token::Token::GT(self.ch),
+            '+' => tok = token::Token::PLUS,
+            '-' => tok = token::Token::MINUS,
+            '!' => tok = token::Token::BANG,
+            '/' => tok = token::Token::FSLASH,
+            '\\' => tok = token::Token::BSLASH,
+            '*' => tok = token::Token::ASTERISK,
+            '<' => tok = token::Token::LT,
+            '>' => tok = token::Token::GT,
             ':' => tok = token::Token::COLON,
             ';' => tok = token::Token::SEMICOLON,
-            '(' => tok = token::Token::LPAREN(self.ch),
-            ')' => tok = token::Token::RPAREN(self.ch),
-            ',' => tok = token::Token::COMMA(self.ch),
-            '{' => tok = token::Token::LBRACE(self.ch),
-            '}' => tok = token::Token::RBRACE(self.ch),
+            '(' => tok = token::Token::LPAREN,
+            ')' => tok = token::Token::RPAREN,
+            ',' => tok = token::Token::COMMA,
+            '{' => tok = token::Token::LBRACE,
+            '}' => tok = token::Token::RBRACE,
             '0' => tok = token::Token::EOF,
             '\'' => tok = token::Token::QMARK, // Single instance of single quote
-            '\"' => tok = {
-                self.read_char();
-                let start = self.position;
-                while self.ch != '\"' {
+            '\"' => {
+                tok = {
                     self.read_char();
+                    let start = self.position;
+                    while self.ch != '\"' {
+                        self.read_char();
+                    }
+                    let chars: Vec<char> =
+                        self.input[start..self.position].iter().copied().collect();
+                    token::Token::DATA(token::Data::STRING(chars.into_iter().collect()))
                 }
-                let chars: Vec<char> = self.input[start..self.position].iter().copied().collect();
-                token::Token::DATA(token::Data::STRING(chars.into_iter().collect()))
-            },
+            }
             ' ' => {
                 self.skip_whitespace();
                 return self.next_token();
@@ -107,9 +110,13 @@ impl Lexer {
                 } else if is_digit(self.ch) {
                     let ident: Vec<char> = self.read_number();
                     if ident.iter().collect::<String>().parse::<i64>().is_ok() {
-                        return token::Token::DATA(token::Data::INT(ident.iter().collect::<String>().parse::<i64>().unwrap()));
+                        return token::Token::DATA(token::Data::INT(
+                            ident.iter().collect::<String>().parse::<i64>().unwrap(),
+                        ));
                     } else if ident.iter().collect::<String>().parse::<f64>().is_ok() {
-                        return token::Token::DATA(token::Data::FLOAT(ident.iter().collect::<String>().parse::<f64>().unwrap()));
+                        return token::Token::DATA(token::Data::FLOAT(
+                            ident.iter().collect::<String>().parse::<f64>().unwrap(),
+                        ));
                     } else {
                         return token::Token::ILLEGAL;
                     }
