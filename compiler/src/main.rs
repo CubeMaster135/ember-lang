@@ -1,6 +1,6 @@
 mod lexer;
 mod parser;
-use crate::parser::parser::Parser;
+use crate::parser::parser::*;
 use std::fs::read_to_string;
 
 fn main() -> Result<(), String> {

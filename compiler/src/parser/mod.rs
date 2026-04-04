@@ -1,4 +1,5 @@
 pub mod parser;
+pub mod variables;
 use crate::lexer::token::DataType;
 
 #[derive(Clone, Debug)]
@@ -54,12 +55,12 @@ impl Name {
 }
 
 #[derive(Clone, Debug)]
-pub struct Variable {
+pub struct VariableBinding {
     name: Name,
     value: Value,
     data_type: DataType,
 }
-impl Variable {
+impl VariableBinding {
     fn new(name: Name, value: Value, data_type: DataType) -> Self {
         Self {
             name,
@@ -67,4 +68,44 @@ impl Variable {
             data_type,
         }
     }
+}
+
+#[derive(Clone, Debug)]
+pub struct VariableDeclaration {
+    name: Name,
+    data_type: DataType,
+}
+impl VariableDeclaration {
+    fn new(name: Name, data_type: DataType) -> Self {
+        Self { name, data_type }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct VariableDefinition {
+    name: Name,
+    value: Value,
+}
+impl VariableDefinition {
+    fn new(name: Name, value: Value) -> Self {
+        Self { name, value }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct VariableModification {
+    name: Name,
+    value: Value,
+    op: Operator,
+}
+impl VariableModification {
+    fn new(name: Name, value: Value, op: Operator) -> Self {
+        Self { name, value, op }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FunctionCall {
+    name: Name,
+    args: Vec<Expr>,
 }

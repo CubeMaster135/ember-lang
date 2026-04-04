@@ -1,1 +1,1 @@
-let variable = 4.0;
+let x: int;
