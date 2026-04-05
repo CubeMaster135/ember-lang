@@ -18,6 +18,6 @@ fn main() -> Result<(), String> {
         }
     }
     let mut parser = Parser::new(lexer_output);
-    println!("{:?}", parser.parse_variable_modification()?);
+    println!("{:?}", parser.parse_variable_manipulation()?);
     Ok(())
 }

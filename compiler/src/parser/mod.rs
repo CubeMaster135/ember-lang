@@ -105,6 +105,14 @@ impl VariableModification {
 }
 
 #[derive(Debug, Clone)]
+pub enum VariableManipulation {
+    Binding(VariableBinding),
+    Declaration(VariableDeclaration),
+    Assignment(VariableAssignment),
+    Modification(VariableModification),
+}
+
+#[derive(Debug, Clone)]
 pub struct FunctionCall {
     name: Name,
     args: Vec<Expr>,

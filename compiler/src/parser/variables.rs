@@ -11,12 +11,7 @@ impl Parser {
         }
 
         // Gets the variable name
-        let name = match self.advance() {
-            Some(Token::IDENT(n)) => n,
-            None => return Err("Missing Variable Name".into()),
-            _ => return Err("Unexpected Variable Name".into()),
-        };
-        let name: String = name.iter().collect();
+        let name = self.parse_variable_name()?;
 
         let mut data_type_before: Option<DataType> = None;
 
@@ -80,12 +75,7 @@ impl Parser {
         }
 
         // Gets the variable name
-        let name = match self.advance() {
-            Some(Token::IDENT(n)) => n,
-            None => return Err("Missing Variable Name".into()),
-            _ => return Err("Unexpected Variable Name".into()),
-        };
-        let name: String = name.iter().collect();
+        let name = self.parse_variable_name()?;
 
         //Identified colon, which is required by a variable declaration
 
@@ -112,17 +102,7 @@ impl Parser {
     }
 
     pub fn parse_variable_assignment(&mut self) -> Result<VariableAssignment, String> {
-        let name = match self.current() {
-            Some(Token::IDENT(n)) => n,
-            None => return Err("Missing Variable Name".into()),
-            _ => {
-                return Err(format!(
-                    "Unexpected Variable Name, got: {:?}",
-                    self.current().unwrap().clone()
-                ));
-            }
-        };
-        let name: String = name.iter().collect();
+        let name = self.parse_variable_name()?;
 
         match self.advance() {
             Some(Token::ASSIGN) => {}
@@ -150,17 +130,7 @@ impl Parser {
     }
 
     pub fn parse_variable_modification(&mut self) -> Result<VariableModification, String> {
-        let name = match self.current() {
-            Some(Token::IDENT(n)) => n,
-            None => return Err("Missing Variable Name".into()),
-            _ => {
-                return Err(format!(
-                    "Unexpected Variable Name, got: {:?}",
-                    self.current().unwrap().clone()
-                ));
-            }
-        };
-        let name: String = name.iter().collect();
+        let name = self.parse_variable_name()?;
 
         let op = match self.advance() {
             Some(Token::PLUS) => Operator::PLUS,
@@ -192,6 +162,120 @@ impl Parser {
                 value: data_to_value(value),
                 op: op,
             }),
+            Err(e) => return Err("Incorect variable declaration: missing semicolon".into()),
+        }
+    }
+
+    pub fn parse_variable_name(&mut self) -> Result<String, String> {
+        let name = match self.current() {
+            Some(Token::IDENT(n)) => n,
+            None => return Err("Missing Variable Name".into()),
+            _ => {
+                return Err(format!(
+                    "Unexpected Variable Name, got: {:?}",
+                    self.current().unwrap().clone()
+                ));
+            }
+        };
+        Ok(name.iter().collect())
+    }
+
+    pub fn parse_datatype(&mut self) -> Result<DataType, String> {
+        let mut data_type_before: Option<DataType> = match self.advance().unwrap().clone() {
+            Token::DATATYPE(dt) => Some(dt),
+            _ => {
+                return Err(format!(
+                    "Unexpected Data Type, got: {:?}",
+                    self.current().unwrap().clone()
+                ));
+            }
+        };
+        println!("{:?}", data_type_before);
+        data_type_before.ok_or("Missing Data Type".into())
+    }
+
+    pub fn parse_operation(&mut self) -> Result<Operator, String> {
+        return match self.advance() {
+            Some(Token::PLUS) => Ok(Operator::PLUS),
+            Some(Token::MINUS) => Ok(Operator::MINUS),
+            Some(Token::ASTERISK) => Ok(Operator::MUL),
+            Some(Token::FSLASH) => Ok(Operator::DIV),
+            _ => return Err("Missing Variable Modification Operator".into()),
+        };
+    }
+
+    pub fn parse_value(&mut self) -> Result<Data, String> {
+        let value = match self.advance() {
+            Some(v) => match v {
+                Token::DATA(v) => v.clone(),
+                _ => return Err("Unexpected Variable Value".into()),
+            },
+            None => {
+                return Err("Missing Variable Value".into());
+            }
+        };
+        Ok(value)
+    }
+
+    pub fn parse_semicolon(&mut self) -> Result<(), String> {
+        match self.expect(vec![Token::SEMICOLON]) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn parse_variable_manipulation(&mut self) -> Result<VariableManipulation, String> {
+        let is_let_keyword = self.expect(vec![Token::LET]) == Ok(Token::LET);
+        if is_let_keyword {
+            self.advance();
+        }
+        let name = self.parse_variable_name()?;
+        let is_type_specified = self.expect(vec![Token::COLON]) == Ok(Token::COLON);
+        let dt: Option<DataType> = if is_type_specified {
+            self.advance();
+            let data_type = self.parse_datatype()?;
+            Some(data_type)
+        } else {
+            None
+        };
+
+        let mut is_modification = self.expect(vec![Token::ASSIGN]) == Ok(Token::ASSIGN);
+        let is_modification = !is_modification;
+        println!("{} {:?}", is_modification, self.current());
+        let mut op: Option<Operator> = None;
+        if is_modification {
+            op = Some(self.parse_operation()?);
+        }
+        self.advance();
+        let value = self.parse_value()?;
+        self.advance().unwrap().clone();
+        match self.expect(vec![Token::SEMICOLON]) {
+            Ok(_) => {
+                if is_modification {
+                    return Ok(VariableManipulation::Modification(VariableModification {
+                        name: Name { name },
+                        op: op.unwrap(),
+                        value: data_to_value(value),
+                    }));
+                }
+                if is_type_specified {
+                    return Ok(VariableManipulation::Binding(VariableBinding {
+                        name: Name { name },
+                        value: data_to_value(value),
+                        data_type: dt.unwrap(),
+                    }));
+                }
+                if is_let_keyword {
+                    return Ok(VariableManipulation::Declaration(VariableDeclaration {
+                        name: Name { name },
+                        data_type: dt.unwrap(),
+                    }));
+                }
+                return Ok(VariableManipulation::Assignment(VariableAssignment {
+                    name: Name { name },
+                    value: data_to_value(value),
+                }));
+            }
             Err(e) => return Err("Incorect variable declaration: missing semicolon".into()),
         }
     }
