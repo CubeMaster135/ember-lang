@@ -63,12 +63,8 @@ impl Lexer {
         self.skip_whitespace();
         match self.ch {
             '=' => tok = token::Token::ASSIGN,
-            '+' => tok = token::Token::PLUS,
-            '-' => tok = token::Token::MINUS,
             '!' => tok = token::Token::BANG,
-            '/' => tok = token::Token::FSLASH,
             '\\' => tok = token::Token::BSLASH,
-            '*' => tok = token::Token::ASTERISK,
             '<' => tok = token::Token::LT,
             '>' => tok = token::Token::GT,
             ':' => tok = token::Token::COLON,
@@ -95,6 +91,28 @@ impl Lexer {
             ' ' => {
                 self.skip_whitespace();
                 return self.next_token();
+            }
+            '+' | '-' | '*' | '/' => {
+                let t = self.ch.clone();
+                self.read_char();
+                if self.ch == '=' {
+                    tok = token::Token::OP(match t {
+                        '+' => token::OperatorToken::PLUSEQUALS,
+                        '-' => token::OperatorToken::MINUSEQUALS,
+                        '*' => token::OperatorToken::TIMESEQUALS,
+                        '/' => token::OperatorToken::DIVEQUALS,
+                        _ => unreachable!(),
+                    });
+                } else {
+                    self.position -= 1;
+                    tok = token::Token::OP(match t {
+                        '+' => token::OperatorToken::PLUS,
+                        '-' => token::OperatorToken::MINUS,
+                        '*' => token::OperatorToken::TIMES,
+                        '/' => token::OperatorToken::DIVIDE,
+                        _ => unreachable!(),
+                    });
+                }
             }
             _ => {
                 if is_letter(self.ch) {

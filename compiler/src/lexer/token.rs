@@ -15,13 +15,24 @@ pub enum Data {
 }
 
 #[derive(PartialEq, Debug, Clone)]
+pub enum OperatorToken {
+    PLUS,
+    MINUS,
+    TIMES,
+    DIVIDE,
+    PLUSEQUALS,
+    MINUSEQUALS,
+    TIMESEQUALS,
+    DIVEQUALS,
+}
+
+#[derive(PartialEq, Debug, Clone)]
 pub enum Token {
     ILLEGAL,
     EOF,
     IDENT(Vec<char>),
     INT(Vec<char>),
     ASSIGN,
-    PLUS,
     COMMA,
     COLON,
     SEMICOLON,
@@ -36,10 +47,7 @@ pub enum Token {
     IF,
     ELSE,
     RETURN,
-    MINUS,
     BANG,
-    ASTERISK,
-    FSLASH,
     BSLASH,
     LT,
     GT,
@@ -47,6 +55,7 @@ pub enum Token {
     SMARK,
     DATATYPE(DataType),
     DATA(Data),
+    OP(OperatorToken),
 }
 
 pub fn get_keyword_token(ident: &Vec<char>) -> Result<Token, String> {
