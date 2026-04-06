@@ -129,20 +129,22 @@ impl Parser {
                     }));
                 }
 
-                let dt1 = data_type.clone().unwrap();
-                let dt2 = value.clone().unwrap().data_type();
+                if data_type.is_some() && value.is_some() {
+                    let dt1 = data_type.clone().unwrap();
+                    let dt2 = value.clone().unwrap().data_type();
 
-                if dt1 != dt2 {
-                    if dt1 == DataType::FLOAT && dt2 == DataType::INT {
-                        if let Data::INT(i) = value.clone().unwrap() {
-                            value = Some(Data::FLOAT(i as f64));
+                    if dt1 != dt2 {
+                        if dt1 == DataType::FLOAT && dt2 == DataType::INT {
+                            if let Data::INT(i) = value.clone().unwrap() {
+                                value = Some(Data::FLOAT(i as f64));
+                            }
+                        } else if dt1 == DataType::INT && dt2 == DataType::FLOAT {
+                            if let Data::FLOAT(f) = value.clone().unwrap() {
+                                value = Some(Data::INT(f as i64));
+                            }
+                        } else {
+                            return Err("Incorrect variable declaration: data type mismatch".into());
                         }
-                    } else if dt1 == DataType::INT && dt2 == DataType::FLOAT {
-                        if let Data::FLOAT(f) = value.clone().unwrap() {
-                            value = Some(Data::INT(f as i64));
-                        }
-                    } else {
-                        return Err("Incorrect variable declaration: data type mismatch".into());
                     }
                 }
 
