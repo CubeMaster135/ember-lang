@@ -36,16 +36,13 @@ impl Parser {
         self.tokens.remove(self.pos);
     }
 
-    pub fn expect(&mut self, expected: Vec<Token>) -> Result<Token, String> {
+    pub fn expect(&mut self, expected: Vec<Token>) -> Option<Token> {
         for token in &expected {
             if *self.current().unwrap() == *token {
-                return Ok(token.clone());
+                self.advance();
+                return Some(token.clone());
             }
         }
-        return Err(format!(
-            "Expected {:?}, found {:?}",
-            expected,
-            self.current().unwrap()
-        ));
+        return None;
     }
 }

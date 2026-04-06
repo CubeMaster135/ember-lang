@@ -13,6 +13,16 @@ pub enum Data {
     BOOL(bool),
     STRING(String),
 }
+impl Data {
+    pub fn data_type(&self) -> DataType {
+        match self {
+            Data::INT(_) => DataType::INT,
+            Data::FLOAT(_) => DataType::FLOAT,
+            Data::BOOL(_) => DataType::BOOL,
+            Data::STRING(_) => DataType::STRING,
+        }
+    }
+}
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum OperatorToken {

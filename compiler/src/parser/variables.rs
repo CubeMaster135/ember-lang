@@ -1,63 +1,83 @@
+use std::arch::x86_64::_MM_ROUND_TOWARD_ZERO;
+use std::ops::BitOrAssign;
+
 use crate::lexer::token::*;
 use crate::parser::parser::*;
 use crate::parser::*;
 
 impl Parser {
-    pub fn parse_variable_name(&mut self) -> Result<String, String> {
-        let name = match self.current() {
-            Some(Token::IDENT(n)) => n,
-            None => return Err("Missing Variable Name".into()),
+    pub fn parse_variable_name(&mut self) -> Option<String> {
+        let name = match self.current().clone() {
+            Some(Token::IDENT(n)) => {
+                let name: String = n.iter().collect(); // collect into owned String immediately
+                self.advance(); // immutable borrow is now gone
+                name
+            }
+            None => return None,
+            _ => return None,
+        };
+        Some(name)
+    }
+
+    pub fn parse_datatype(&mut self) -> Option<DataType> {
+        match self.current().unwrap().clone() {
+            Token::DATATYPE(dt) => {
+                self.advance();
+                Some(dt)
+            }
             _ => {
-                return Err(format!(
-                    "Unexpected Variable Name, got: {:?}",
-                    self.current().unwrap().clone()
-                ));
+                return None;
             }
-        };
-        Ok(name.iter().collect())
+        }
     }
 
-    pub fn parse_datatype(&mut self) -> Result<DataType, String> {
-        let mut data_type_before: Option<DataType> = match self.advance().unwrap().clone() {
-            Token::DATATYPE(dt) => Some(dt),
-            _ => {
-                return Err(format!(
-                    "Unexpected Data Type, got: {:?}",
-                    self.current().unwrap().clone()
-                ));
-            }
-        };
-        println!("{:?}", data_type_before);
-        data_type_before.ok_or("Missing Data Type".into())
+    pub fn parse_operation(&mut self, op: Option<Token>) -> Option<Operator> {
+        match op {
+            Some(Token::OP(OperatorToken::PLUSEQUALS)) => Some(Operator::PLUS),
+            Some(Token::OP(OperatorToken::MINUSEQUALS)) => Some(Operator::MINUS),
+            Some(Token::OP(OperatorToken::TIMESEQUALS)) => Some(Operator::MUL),
+            Some(Token::OP(OperatorToken::DIVEQUALS)) => Some(Operator::DIV),
+            Some(Token::ASSIGN) => Some(Operator::EQUALS),
+            _ => unreachable!(),
+        }
     }
 
-    pub fn parse_operation(&mut self) -> Result<Operator, String> {
-        return match self.advance() {
-            Some(Token::OP(OperatorToken::PLUS)) => Ok(Operator::PLUS),
-            Some(Token::OP(OperatorToken::MINUS)) => Ok(Operator::MINUS),
-            Some(Token::OP(OperatorToken::TIMES)) => Ok(Operator::MUL),
-            Some(Token::OP(OperatorToken::DIVIDE)) => Ok(Operator::DIV),
-            _ => return Err("Missing Variable Modification Operator".into()),
-        };
+    pub fn parse_value(&mut self) -> Option<(Operator, Data)> {
+        let modification = self.expect(vec![
+            Token::OP(OperatorToken::PLUSEQUALS),
+            Token::OP(OperatorToken::MINUSEQUALS),
+            Token::OP(OperatorToken::TIMESEQUALS),
+            Token::OP(OperatorToken::DIVEQUALS),
+            Token::ASSIGN,
+        ]);
+
+        if modification.is_some() {
+            let op = self.parse_operation(modification);
+
+            let value = match self.current() {
+                Some(v) => match v {
+                    Token::DATA(v) => {
+                        let value = v.clone();
+                        self.advance();
+                        Some(value)
+                    }
+                    _ => None,
+                },
+                None => None,
+            };
+
+            Some((op.unwrap(), value.unwrap()))
+        } else {
+            None
+        }
     }
 
-    pub fn parse_value(&mut self) -> Result<Data, String> {
-        let value = match self.advance() {
-            Some(v) => match v {
-                Token::DATA(v) => v.clone(),
-                _ => return Err("Unexpected Variable Value".into()),
-            },
-            None => {
-                return Err("Missing Variable Value".into());
-            }
-        };
-        Ok(value)
-    }
-
-    pub fn parse_semicolon(&mut self) -> Result<(), String> {
-        match self.expect(vec![Token::SEMICOLON]) {
-            Ok(_) => Ok(()),
-            Err(e) => Err(e),
+    pub fn parse_type_specified(&mut self) -> Option<DataType> {
+        if self.expect(vec![Token::COLON]).is_some() {
+            let data_type = self.parse_datatype()?;
+            Some(data_type)
+        } else {
+            None
         }
     }
 
@@ -67,68 +87,75 @@ impl Parser {
 
     pub fn parse_variable_manipulation(&mut self) -> Result<VariableManipulation, String> {
         // Checks if let keyword is present
-        let is_let_keyword = self.expect(vec![Token::LET]) == Ok(Token::LET);
-        if is_let_keyword {
-            self.advance();
+        let let_keyword: Option<Token> = self.expect(vec![Token::LET]);
+
+        // Gets the variable name (required)
+        let name = self
+            .parse_variable_name()
+            .ok_or(String::from("Missing Variable Name"))?;
+
+        // Checks if a type is specified
+        let mut data_type = self.parse_type_specified();
+
+        // Checks if a modification operator is present
+        let mut operation = None;
+        let mut value = None;
+        let temp = self.parse_value();
+        if temp.is_some() {
+            let (op, val) = temp.unwrap();
+            operation = Some(op);
+            value = Some(val);
         }
 
-        // Gets the variable name
-        let name = self.parse_variable_name()?;
-        self.advance();
-
-        let is_type_specified = self.expect(vec![Token::COLON]) == Ok(Token::COLON);
-        let mut dt: Option<DataType> = None;
-        if is_type_specified {
-            let data_type = self.parse_datatype()?;
-            dt = Some(data_type);
-        }
-
-        self.advance();
-        self.print_current();
-        let mut is_modification = self
-            .expect(vec![
-                Token::OP(OperatorToken::PLUS),
-                Token::OP(OperatorToken::MINUS),
-                Token::OP(OperatorToken::TIMES),
-                Token::OP(OperatorToken::DIVIDE),
-            ])
-            .is_ok();
-        println!("{} {:?}", is_modification, self.current());
-        let mut op: Option<Operator> = None;
-        if is_modification {
-            op = Some(self.parse_operation()?);
-        }
-        let value = self.parse_value()?;
-
-        self.advance();
         match self.expect(vec![Token::SEMICOLON]) {
-            Ok(_) => {
-                if is_modification {
+            Some(_) => {
+                if operation.is_some() && operation.clone().unwrap() != Operator::EQUALS {
                     return Ok(VariableManipulation::Modification(VariableModification {
                         name: Name { name },
-                        op: op.unwrap(),
-                        value: data_to_value(value),
+                        op: operation.unwrap(),
+                        value: data_to_value(value.unwrap()),
                     }));
                 }
-                if is_type_specified {
-                    return Ok(VariableManipulation::Binding(VariableBinding {
+                if let_keyword.is_none() {
+                    return Ok(VariableManipulation::Assignment(VariableAssignment {
                         name: Name { name },
-                        value: data_to_value(value),
-                        data_type: dt.unwrap(),
+                        value: data_to_value(value.unwrap()),
                     }));
                 }
-                if is_let_keyword {
+                if data_type.is_some() && value.is_none() {
                     return Ok(VariableManipulation::Declaration(VariableDeclaration {
                         name: Name { name },
-                        data_type: dt.unwrap(),
+                        data_type: data_type.unwrap(),
                     }));
                 }
-                return Ok(VariableManipulation::Assignment(VariableAssignment {
+
+                let dt1 = data_type.clone().unwrap();
+                let dt2 = value.clone().unwrap().data_type();
+
+                if dt1 != dt2 {
+                    if dt1 == DataType::FLOAT && dt2 == DataType::INT {
+                        if let Data::INT(i) = value.clone().unwrap() {
+                            value = Some(Data::FLOAT(i as f64));
+                        }
+                    } else if dt1 == DataType::INT && dt2 == DataType::FLOAT {
+                        if let Data::FLOAT(f) = value.clone().unwrap() {
+                            value = Some(Data::INT(f as i64));
+                        }
+                    } else {
+                        return Err("Incorrect variable declaration: data type mismatch".into());
+                    }
+                }
+
+                if data_type.is_none() {
+                    data_type = Some(value.clone().unwrap().data_type());
+                }
+                return Ok(VariableManipulation::Binding(VariableBinding {
                     name: Name { name },
-                    value: data_to_value(value),
+                    value: data_to_value(value.unwrap()),
+                    data_type: data_type.unwrap(),
                 }));
             }
-            Err(e) => return Err("Incorect variable declaration: missing semicolon".into()),
+            None => return Err("Incorect variable declaration: missing semicolon".into()),
         }
     }
 }

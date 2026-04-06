@@ -2,12 +2,13 @@ pub mod parser;
 pub mod variables;
 use crate::lexer::token::DataType;
 
-#[derive(Clone, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 enum Operator {
     PLUS,
     MINUS,
     MUL,
     DIV,
+    EQUALS,
 }
 
 #[derive(Clone, Debug)]
