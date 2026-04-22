@@ -11,7 +11,7 @@ enum Operator {
     EQUALS,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Expr {
     Value(f64),
     Variable(String),
@@ -37,7 +37,7 @@ impl Expr {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 enum Value {
     STRING(String),
     INT(i64),
@@ -45,7 +45,7 @@ enum Value {
     BOOL(bool),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 struct Name {
     name: String,
 }
@@ -55,7 +55,7 @@ impl Name {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct VariableBinding {
     name: Name,
     value: Value,
@@ -71,7 +71,7 @@ impl VariableBinding {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct VariableDeclaration {
     name: Name,
     data_type: DataType,
@@ -82,7 +82,7 @@ impl VariableDeclaration {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct VariableAssignment {
     name: Name,
     value: Value,
@@ -93,7 +93,7 @@ impl VariableAssignment {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct VariableModification {
     name: Name,
     value: Value,
@@ -105,7 +105,7 @@ impl VariableModification {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum VariableManipulation {
     Binding(VariableBinding),
     Declaration(VariableDeclaration),

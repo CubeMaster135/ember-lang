@@ -1,1 +1,1 @@
-let x: float = 5;
+let x = 5;

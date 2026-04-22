@@ -170,3 +170,45 @@ pub fn data_to_value(data: Data) -> Value {
         Data::STRING(s) => Value::STRING(s),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lexer::*;
+    use crate::parser::*;
+
+    #[test]
+    fn test_parse_variable_binding_no_type_specified() {
+        let mut parser = Parser::new(vec![Token::LET, Token::IDENT(vec!['H', 'e', 'l', 'l', 'o']), Token::ASSIGN, Token::DATA(Data::INT(13)), Token::SEMICOLON]);
+        let result = parser.parse_variable_manipulation();
+        assert_eq!(result, Ok(VariableManipulation::Binding(VariableBinding { name: Name { name: "Hello".to_string() }, value: Value::INT(13), data_type: DataType::INT })));
+    }
+
+    #[test]
+    fn test_parse_variable_binding_type_specified() {
+        let mut parser = Parser::new(vec![Token::LET, Token::IDENT(vec!['x']), Token::COLON, Token::DATATYPE(DataType::FLOAT), Token::ASSIGN, Token::DATA(Data::INT(13)), Token::SEMICOLON]);
+        let result = parser.parse_variable_manipulation();
+        assert_eq!(result, Ok(VariableManipulation::Binding(VariableBinding { name: Name { name: "x".to_string() }, value: Value::FLOAT(13.0), data_type: DataType::FLOAT })));
+    }
+
+    #[test]
+    fn test_parse_variable_declaration() {
+        let mut parser = Parser::new(vec![Token::LET, Token::IDENT(vec!['y']), Token::COLON, Token::DATATYPE(DataType::BOOL), Token::SEMICOLON]);
+        let result = parser.parse_variable_manipulation();
+        assert_eq!(result, Ok(VariableManipulation::Declaration(VariableDeclaration { name: Name { name: "y".to_string() }, data_type: DataType::BOOL })));
+    }
+
+    #[test]
+    fn test_parse_variable_assignment() {
+        let mut parser = Parser::new(vec![Token::IDENT(vec!['H', 'e', 'l', 'L', 'o']), Token::ASSIGN, Token::DATA(Data::INT(13)), Token::SEMICOLON]);
+        let result = parser.parse_variable_manipulation();
+        assert_eq!(result, Ok(VariableManipulation::Assignment(VariableAssignment { name: Name { name: "HelLo".to_string() }, value: Value::INT(13) })));
+    }
+
+    #[test]
+    fn test_parse_variable_modification() {
+        let mut parser = Parser::new(vec![Token::IDENT(vec!['H', 'e', 'l', 'l', 'o']), Token::OP(OperatorToken::TIMESEQUALS), Token::DATA(Data::FLOAT(6.9)), Token::SEMICOLON]);
+        let result = parser.parse_variable_manipulation();
+        assert_eq!(result, Ok(VariableManipulation::Modification(VariableModification { name: Name { name: "Hello".to_string() }, value: Value::FLOAT(6.9), op: Operator::MUL })));
+    }
+}
